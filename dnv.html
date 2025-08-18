@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Túnel de Memórias 3D Lento</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  background: radial-gradient(circle at center, #050620, #0b0c2b 40%, #1a0f3f 70%, #000000 100%);
+}
+
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+.floating-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.2);
+  opacity: 1;
+  z-index: 2;
+}
+
+.floating-item video {
+  width: 28vw;
+  border: 2px solid white;
+  border-radius: 12px;
+  box-shadow: 0 0 12px #fff;
+}
+
+.floating-item.text {
+  color: #ff66cc;
+  font-size: 26px;
+  font-family: Arial, sans-serif;
+  text-shadow: 0 0 8px #ff66cc, 0 0 16px #cc33ff;
+  white-space: nowrap;
+}
+
+#playButton {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  background: rgba(255, 105, 180, 0.8);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+  z-index: 10;
+}
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<button id="playButton">▶ Play Música</button>
+<audio id="bgMusic" loop>
+  <source src="musica.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const canvas = document.getElementById("sky");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Estrelas e meteoros
+const stars = [];
+const shootingStars = [];
+const phrases = [
+  "Te Amo 💖", "Você é meu universo 🌌", "Contando estrelas contigo ✨",
+  "My Love 💕", "Amor intergaláctico 🚀", "Para sempre nós 💗",
+  "No espaço, só penso em você 💫", "Eres preciosa 🌸", "Me encantas ✨", "Amor da minha vida 💞"
+];
+
+// Criar estrelas
+for (let i = 0; i < 300; i++) {
+  stars.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    radius: Math.random() * 2
+  });
+}
+
+function drawStars() {
+  ctx.fillStyle = "white";
+  stars.forEach(star => {
+    ctx.beginPath();
+    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function createShootingStar() {
+  shootingStars.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height / 2,
+    length: Math.random() * 80 + 10,
+    speed: Math.random() * 3 + 1,
+    opacity: 1
+  });
+}
+
+function drawShootingStars() {
+  for (let i = 0; i < shootingStars.length; i++) {
+    const star = shootingStars[i];
+    ctx.strokeStyle = `rgba(255,255,255,${star.opacity})`;
+    ctx.beginPath();
+    ctx.moveTo(star.x, star.y);
+    ctx.lineTo(star.x + star.length, star.y + star.length);
+    ctx.stroke();
+    star.x += star.speed;
+    star.y += star.speed;
+    star.opacity -= 0.01;
+    if (star.opacity <= 0) {
+      shootingStars.splice(i, 1);
+      i--;
+    }
+  }
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawStars();
+  drawShootingStars();
+  requestAnimationFrame(animate);
+}
+
+// Função 3D / paralaxe para textos
+function showPhrases3D(count = 3) {
+  for (let i = 0; i < count; i++) {
+    const phrase = document.createElement("div");
+    phrase.className = "floating-item text";
+    phrase.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+    document.body.appendChild(phrase);
+
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = Math.random() * 1500 + 1000;
+    const scale = Math.random() * 0.7 + 0.7;
+    const duration = Math.random() * 5000 + 25000; // 25-30 segundos
+
+    const dx = Math.cos(angle) * distance;
+    const dy = Math.sin(angle) * distance;
+    const rotation = (Math.random() * 2 - 1) * 25;
+
+    phrase.animate([
+      { transform: `translate(-50%, -50%) scale(0.2) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${scale}) rotate(${rotation}deg)`, opacity: 0 }
+    ], {
+      duration: duration,
+      easing: "linear",
+      fill: "forwards"
+    });
+
+    setTimeout(() => phrase.remove(), duration);
+  }
+}
+
+// Função 3D / paralaxe para vídeos
+let currentVideoIndex = 1;
+function showVideos3D(count = 3) {
+  for (let i = 0; i < count; i++) {
+    const container = document.createElement("div");
+    container.className = "floating-item";
+
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = Math.random() * 1500 + 1000;
+    const scale = Math.random() * 0.7 + 0.7;
+    const duration = Math.random() * 5000 + 27000; // 27-32 segundos
+    const dx = Math.cos(angle) * distance;
+    const dy = Math.sin(angle) * distance;
+    const rotation = (Math.random() * 2 - 1) * 25;
+
+    const video = document.createElement("video");
+    video.src = `video${currentVideoIndex}.mp4`;
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+    container.appendChild(video);
+    document.body.appendChild(container);
+
+    currentVideoIndex = currentVideoIndex % 10 + 1;
+
+    container.animate([
+      { transform: `translate(-50%, -50%) scale(0.2) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${scale}) rotate(${rotation}deg)`, opacity: 0 }
+    ], {
+      duration: duration,
+      easing: "linear",
+      fill: "forwards"
+    });
+
+    setTimeout(() => container.remove(), duration);
+  }
+}
+
+// Intervalos mais lentos para acompanhar
+setInterval(() => showPhrases3D(3), 5000);
+setInterval(() => showVideos3D(3), 6000);
+setInterval(createShootingStar, 2000);
+
+animate();
+
+// Música
+const music = document.getElementById("bgMusic");
+const playButton = document.getElementById("playButton");
+music.play().catch(() => {
+  playButton.style.display = "block";
+});
+
+playButton.addEventListener("click", () => {
+  music.play();
+  playButton.style.display = "none";
+});
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+</body>
+</html>
